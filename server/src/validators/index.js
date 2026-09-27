@@ -1,0 +1,9 @@
+const { z } = require('zod');
+const email = z.string().trim().email().max(120);
+const id = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid ID');
+exports.register = z.object({ body: z.object({ firstName: z.string().trim().min(2).max(40), lastName: z.string().trim().min(2).max(40), email, password: z.string().min(8).max(72) }) });
+exports.login = z.object({ body: z.object({ email, password: z.string().min(1) }) });
+exports.product = z.object({ body: z.object({ name: z.string().trim().min(2).max(100), slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), description: z.string().trim().min(10).max(1000), category: z.string().trim().min(2).max(60), price: z.coerce.number().nonnegative(), stock: z.coerce.number().int().nonnegative(), image: z.string().trim().optional(), featured: z.boolean().optional(), active: z.boolean().optional() }) });
+exports.order = z.object({ body: z.object({ items: z.array(z.object({ productId: id, quantity: z.coerce.number().int().min(1).max(20) })).min(1).max(20), shippingAddress: z.object({ fullName: z.string().trim().min(3).max(80), phone: z.string().trim().min(7).max(25), address: z.string().trim().min(8).max(200), city: z.string().trim().min(2).max(60) }) }) });
+exports.contact = z.object({ body: z.object({ name: z.string().trim().min(2).max(80), email, phone: z.string().trim().max(25).optional().default(''), message: z.string().trim().min(10).max(2000) }) });
+exports.mongoId = z.object({ params: z.object({ id }) });

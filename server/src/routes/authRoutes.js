@@ -1,0 +1,8 @@
+const router = require('express').Router();
+const bcrypt = require('bcryptjs'); const jwt = require('jsonwebtoken');
+const User = require('../models/User'); const validate = require('../middleware/validate'); const rules = require('../validators'); const ApiError = require('../utils/apiError'); const { protect } = require('../middleware/auth');
+const issueToken = user => jwt.sign({ sub: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+router.post('/register', validate(rules.register), async (req, res, next) => { try { const data = req.validated.body; if (await User.exists({ email: data.email })) throw new ApiError(409, 'An account already exists for this email'); const user = await User.create({ ...data, passwordHash: await bcrypt.hash(data.password, 12), password: undefined }); res.status(201).json({ success: true, token: issueToken(user), user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role } }); } catch(e){ next(e); } });
+router.post('/login', validate(rules.login), async (req, res, next) => { try { const user = await User.findOne({ email: req.validated.body.email }).select('+passwordHash'); if (!user || !(await bcrypt.compare(req.validated.body.password, user.passwordHash))) throw new ApiError(401, 'Email or password is incorrect'); res.json({ success: true, token: issueToken(user), user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email, role: user.role } }); } catch(e){ next(e); } });
+router.get('/me', protect, (req, res) => res.json({ success: true, user: req.user }));
+module.exports = router;

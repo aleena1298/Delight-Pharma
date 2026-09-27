@@ -1,0 +1,2 @@
+const API='/api';
+export async function request(path,options={}){const token=localStorage.getItem('dp_token');const response=await fetch(`${API}${path}`,{...options,headers:{'Content-Type':'application/json',...(token&&{Authorization:`Bearer ${token}`}),...options.headers}});const data=await response.json().catch(()=>({message:'Invalid server response'}));if(!response.ok)throw new Error(data.message||'Request failed');return data}

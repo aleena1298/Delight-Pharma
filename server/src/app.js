@@ -1,0 +1,6 @@
+const express = require('express'); const cors = require('cors'); const helmet = require('helmet'); const morgan = require('morgan'); const rateLimit = require('express-rate-limit'); const path = require('path');
+const { notFound, errorHandler } = require('./middleware/error');
+const app = express(); app.set('trust proxy', 1); app.use(helmet()); app.use(cors({ origin: process.env.CLIENT_URL?.split(',') || 'http://localhost:5173' })); app.use(express.json({ limit: '100kb' })); app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev')); app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: 'draft-8' }));
+app.get('/api/health', (req, res) => res.json({ success: true, status: 'healthy' })); app.use('/api/auth', require('./routes/authRoutes')); app.use('/api/products', require('./routes/productRoutes')); app.use('/api/orders', require('./routes/orderRoutes')); app.use('/api/contact', require('./routes/contactRoutes'));
+if (process.env.NODE_ENV === 'production') { const client = path.resolve(__dirname, '../../client/dist'); app.use(express.static(client)); app.get('/{*splat}', (req, res) => res.sendFile(path.join(client, 'index.html'))) }
+app.use(notFound); app.use(errorHandler); module.exports = app;
